@@ -1,13 +1,16 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, MapPin, Stamp, Trophy } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useVenues } from "@/hooks/useVenues";
-import VenueCard from "@/components/VenueCard";
 import VenueDetailSheet from "@/components/VenueDetailSheet";
 import SearchInput from "@/components/SearchInput";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RutaVenuesTab from "@/components/ruta/RutaVenuesTab";
+import RutaPassportTab from "@/components/ruta/RutaPassportTab";
+import RutaRankingTab from "@/components/ruta/RutaRankingTab";
 import type { VenueWithTapa, Event } from "@/types/database";
 import logo from "@/assets/logo.png";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +21,7 @@ const RutaDetailPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVenue, setSelectedVenue] = useState<VenueWithTapa | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("locales");
 
   // Fetch event by slug
   const { data: event, isLoading: isLoadingEvent } = useQuery({
@@ -44,7 +48,7 @@ const RutaDetailPage = () => {
   const filteredVenues = useMemo(() => {
     if (!venues) return [];
     if (!searchQuery.trim()) return venues;
-    
+
     const query = searchQuery.toLowerCase();
     return venues.filter(
       (venue) =>
@@ -66,6 +70,40 @@ const RutaDetailPage = () => {
           <Button variant="outline" onClick={() => navigate("/")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoading && !event) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
+          <div className="px-4 py-4">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10"
+                onClick={() => navigate("/")}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <img src={logo} alt="Tapea" className="h-10 w-10 object-contain" />
+            </div>
+          </div>
+        </header>
+        <div className="flex flex-col items-center justify-center flex-1 py-12 text-center px-4">
+          <img
+            src={logo}
+            alt=""
+            className="h-16 w-16 object-contain opacity-30 mb-4"
+          />
+          <p className="text-muted-foreground mb-4">Ruta no encontrada</p>
+          <Button variant="outline" onClick={() => navigate("/")}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Ver todas las rutas
           </Button>
         </div>
       </div>
@@ -105,14 +143,36 @@ const RutaDetailPage = () => {
               )}
             </div>
           </div>
-          
-          <SearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Buscar local o tapa..."
-          />
+
+          {activeTab === "locales" && (
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Buscar local o tapa..."
+            />
+          )}
         </div>
       </header>
+
+      {/* Tabs Navigation */}
+      <div className="px-4 py-2 border-b border-border/50 bg-background/95 backdrop-blur-md">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full grid grid-cols-3">
+            <TabsTrigger value="locales" className="gap-1.5">
+              <MapPin className="h-4 w-4" />
+              <span className="hidden sm:inline">Locales</span>
+            </TabsTrigger>
+            <TabsTrigger value="pasaporte" className="gap-1.5">
+              <Stamp className="h-4 w-4" />
+              <span className="hidden sm:inline">Pasaporte</span>
+            </TabsTrigger>
+            <TabsTrigger value="ranking" className="gap-1.5">
+              <Trophy className="h-4 w-4" />
+              <span className="hidden sm:inline">Ranking</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       {/* Content */}
       <div className="flex-1 px-4 py-4 pb-20">
@@ -120,32 +180,25 @@ const RutaDetailPage = () => {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : !event ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <img src={logo} alt="" className="h-16 w-16 object-contain opacity-30 mb-4" />
-            <p className="text-muted-foreground mb-4">Ruta no encontrada</p>
-            <Button variant="outline" onClick={() => navigate("/")}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Ver todas las rutas
-            </Button>
-          </div>
-        ) : filteredVenues.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <img src={logo} alt="" className="h-16 w-16 object-contain opacity-30 mb-4" />
-            <p className="text-muted-foreground">
-              {searchQuery ? "No se encontraron resultados" : "No hay locales disponibles"}
-            </p>
-          </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {filteredVenues.map((venue) => (
-              <VenueCard
-                key={venue.id}
-                venue={venue}
-                onClick={() => handleVenueClick(venue)}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsContent value="locales" className="mt-0">
+              <RutaVenuesTab
+                venues={filteredVenues}
+                isLoading={false}
+                searchQuery={searchQuery}
+                onVenueClick={handleVenueClick}
               />
-            ))}
-          </div>
+            </TabsContent>
+
+            <TabsContent value="pasaporte" className="mt-0">
+              {event && <RutaPassportTab eventId={event.id} />}
+            </TabsContent>
+
+            <TabsContent value="ranking" className="mt-0">
+              {event && <RutaRankingTab eventId={event.id} />}
+            </TabsContent>
+          </Tabs>
         )}
       </div>
 
