@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import VoteDialog from "@/components/VoteDialog";
+import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import { useVotes } from "@/hooks/useVotes";
 import { useGeoLocation } from "@/hooks/useGeoLocation";
 import { useDevMode } from "@/hooks/useDevMode";
@@ -192,13 +193,13 @@ const VenueDetailSheet = ({ venue, open, onOpenChange }: VenueDetailSheetProps) 
             {/* Hero image */}
             <div className="relative aspect-[4/3] w-full">
               {starTapa?.image_url ? (
-                <img
+                <ImageWithFallback
                   src={starTapa.image_url}
                   alt={starTapa.name}
                   className="w-full h-full object-cover"
                 />
               ) : venue.image_url ? (
-                <img
+                <ImageWithFallback
                   src={venue.image_url}
                   alt={venue.name}
                   className="w-full h-full object-cover"
