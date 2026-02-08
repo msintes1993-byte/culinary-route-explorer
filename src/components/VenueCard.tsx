@@ -1,6 +1,7 @@
 import { MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import type { VenueWithTapa } from "@/types/database";
 
 interface VenueCardProps {
@@ -18,7 +19,7 @@ const VenueCard = ({ venue, onClick }: VenueCardProps) => {
     >
       <div className="relative aspect-[16/10] overflow-hidden">
         {venue.image_url ? (
-          <img
+          <ImageWithFallback
             src={venue.image_url}
             alt={venue.name}
             className="w-full h-full object-cover"
