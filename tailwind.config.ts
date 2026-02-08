@@ -62,6 +62,7 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
         "hover-dark": "hsl(var(--hover-dark))",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
