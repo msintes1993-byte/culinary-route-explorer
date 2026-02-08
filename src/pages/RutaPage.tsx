@@ -1,17 +1,22 @@
 import { useState, useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import { useVenues } from "@/hooks/useVenues";
+import { useActiveEvent } from "@/hooks/useActiveEvent";
 import VenueCard from "@/components/VenueCard";
 import VenueDetailSheet from "@/components/VenueDetailSheet";
 import SearchInput from "@/components/SearchInput";
 import type { VenueWithTapa } from "@/types/database";
 import logo from "@/assets/logo.png";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const RutaPage = () => {
-  const { data: venues, isLoading, error } = useVenues();
+  const { data: activeEvent, isLoading: isLoadingEvent } = useActiveEvent();
+  const { data: venues, isLoading: isLoadingVenues, error } = useVenues(activeEvent?.id);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVenue, setSelectedVenue] = useState<VenueWithTapa | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  const isLoading = isLoadingEvent || isLoadingVenues;
 
   const filteredVenues = useMemo(() => {
     if (!venues) return [];
@@ -48,10 +53,21 @@ const RutaPage = () => {
           <div className="flex items-center gap-3">
             <img src={logo} alt="Tapea" className="h-10 w-10 object-contain" />
             <div>
-              <h1 className="font-display font-bold text-xl text-foreground">Tapea</h1>
-              <p className="text-xs text-muted-foreground">
-                {venues?.length || 0} locales participantes
-              </p>
+              {isLoadingEvent ? (
+                <>
+                  <Skeleton className="h-6 w-32 mb-1" />
+                  <Skeleton className="h-3 w-24" />
+                </>
+              ) : (
+                <>
+                  <h1 className="font-display font-bold text-xl text-foreground">
+                    {activeEvent?.name || "Tapea"}
+                  </h1>
+                  <p className="text-xs text-muted-foreground">
+                    {venues?.length || 0} locales participantes
+                  </p>
+                </>
+              )}
             </div>
           </div>
           
@@ -68,6 +84,11 @@ const RutaPage = () => {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : !activeEvent ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <img src={logo} alt="" className="h-16 w-16 object-contain opacity-30 mb-4" />
+            <p className="text-muted-foreground">No hay ningún evento activo</p>
           </div>
         ) : filteredVenues.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
