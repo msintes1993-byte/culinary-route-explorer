@@ -11,6 +11,7 @@ import AppLayout from "./components/AppLayout";
 import RutaPage from "./pages/RutaPage";
 import PasaportePage from "./pages/PasaportePage";
 import RankingPage from "./pages/RankingPage";
+import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
                   <Route path="/pasaporte" element={<PasaportePage />} />
                   <Route path="/ranking" element={<RankingPage />} />
                 </Route>
+                <Route path="/admin" element={<AdminPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
