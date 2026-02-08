@@ -6,7 +6,7 @@ export default {
   prefix: "",
   theme: {
     fontFamily: {
-      sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+      sans: ['Inter', 'system-ui', 'sans-serif'],
       display: ['"Playfair Display"', 'serif'],
     },
     container: {
