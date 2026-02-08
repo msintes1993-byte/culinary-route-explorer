@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { to: "/", label: "Ruta", icon: MapPin },
+  { to: "/explorar", label: "Explorar", icon: MapPin },
   { to: "/pasaporte", label: "Mi Pasaporte", icon: Stamp },
   { to: "/ranking", label: "Ranking", icon: Trophy },
 ];
