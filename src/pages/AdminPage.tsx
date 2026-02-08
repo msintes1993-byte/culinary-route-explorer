@@ -66,6 +66,7 @@ const AdminPage = () => {
 
   // Selected states
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("rutas");
   const [selectedVenueForTapa, setSelectedVenueForTapa] = useState<{ id: string; name: string } | null>(null);
 
   // Dialog states
@@ -192,7 +193,7 @@ const AdminPage = () => {
       </header>
 
       <div className="flex-1 p-4 pb-8">
-        <Tabs defaultValue="rutas" className="space-y-4">
+        <Tabs defaultValue="rutas" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="rutas">Rutas</TabsTrigger>
             <TabsTrigger value="restaurantes" disabled={!selectedEventId}>
@@ -276,7 +277,18 @@ const AdminPage = () => {
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedEventId(event.id);
+                              setActiveTab("restaurantes");
+                            }}
+                          >
+                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -296,11 +308,6 @@ const AdminPage = () => {
               </Card>
             )}
 
-            {selectedEventId && (
-              <p className="text-sm text-muted-foreground text-center">
-                Ruta seleccionada. Ve a la pestaña "Restaurantes" para gestionar los locales.
-              </p>
-            )}
           </TabsContent>
 
           {/* RESTAURANTES TAB */}
