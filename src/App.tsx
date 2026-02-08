@@ -8,7 +8,10 @@ import { PendingVoteProvider } from "@/hooks/usePendingVote";
 import { DevModeProvider } from "@/hooks/useDevMode";
 import PendingVoteHandler from "@/components/PendingVoteHandler";
 import AppLayout from "./components/AppLayout";
+import HomePage from "./pages/HomePage";
 import RutaPage from "./pages/RutaPage";
+import RutaDetailPage from "./pages/RutaDetailPage";
+import VotarPage from "./pages/VotarPage";
 import PasaportePage from "./pages/PasaportePage";
 import RankingPage from "./pages/RankingPage";
 import AdminPage from "./pages/AdminPage";
@@ -27,12 +30,21 @@ const App = () => (
             <PendingVoteHandler />
             <BrowserRouter>
               <Routes>
+                {/* Public routes */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/ruta/:slug" element={<RutaDetailPage />} />
+                <Route path="/votar/:venueId" element={<VotarPage />} />
+                
+                {/* Routes with bottom navigation */}
                 <Route element={<AppLayout />}>
-                  <Route path="/" element={<RutaPage />} />
+                  <Route path="/explorar" element={<RutaPage />} />
                   <Route path="/pasaporte" element={<PasaportePage />} />
                   <Route path="/ranking" element={<RankingPage />} />
                 </Route>
+                
+                {/* Admin route */}
                 <Route path="/admin" element={<AdminPage />} />
+                
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
