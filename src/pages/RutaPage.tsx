@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
-import { Loader2, MapPin } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useVenues } from "@/hooks/useVenues";
 import VenueCard from "@/components/VenueCard";
 import VenueDetailSheet from "@/components/VenueDetailSheet";
 import SearchInput from "@/components/SearchInput";
 import type { VenueWithTapa } from "@/types/database";
+import logo from "@/assets/logo.png";
 
 const RutaPage = () => {
   const { data: venues, isLoading, error } = useVenues();
@@ -45,9 +46,7 @@ const RutaPage = () => {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
         <div className="px-4 py-4 space-y-3">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <MapPin className="h-5 w-5 text-primary" />
-            </div>
+            <img src={logo} alt="Ruta Gastronómica" className="h-10 w-10 object-contain" />
             <div>
               <h1 className="font-display font-bold text-xl text-foreground">La Ruta</h1>
               <p className="text-xs text-muted-foreground">
@@ -72,9 +71,7 @@ const RutaPage = () => {
           </div>
         ) : filteredVenues.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <MapPin className="h-8 w-8 text-muted-foreground" />
-            </div>
+            <img src={logo} alt="" className="h-16 w-16 object-contain opacity-30 mb-4" />
             <p className="text-muted-foreground">
               {searchQuery ? "No se encontraron resultados" : "No hay locales disponibles"}
             </p>
