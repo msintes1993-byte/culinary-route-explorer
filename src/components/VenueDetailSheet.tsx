@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { MapPin, Euro, Star } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { MapPin, Euro, Star, Navigation, Loader2, AlertTriangle } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -11,6 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import VoteDialog from "@/components/VoteDialog";
 import { useVotes } from "@/hooks/useVotes";
+import { useGeoLocation } from "@/hooks/useGeoLocation";
+import { useDevMode } from "@/hooks/useDevMode";
+import { validateDistance, formatDistance } from "@/lib/geo";
 import type { VenueWithTapa } from "@/types/database";
 
 interface VenueDetailSheetProps {
@@ -22,11 +25,161 @@ interface VenueDetailSheetProps {
 const VenueDetailSheet = ({ venue, open, onOpenChange }: VenueDetailSheetProps) => {
   const [voteDialogOpen, setVoteDialogOpen] = useState(false);
   const { getVoteForTapa } = useVotes();
+  const { latitude, longitude, loading: geoLoading, error: geoError, getPosition, hasLocation } = useGeoLocation();
+  const { isDevMode } = useDevMode();
+
+  // Get position when sheet opens
+  useEffect(() => {
+    if (open && venue) {
+      getPosition();
+    }
+  }, [open, venue, getPosition]);
+
+  const distanceValidation = useMemo(() => {
+    if (!venue || !hasLocation || !latitude || !longitude) {
+      return null;
+    }
+    return validateDistance(latitude, longitude, venue.lat, venue.lng);
+  }, [venue, hasLocation, latitude, longitude]);
+
+  // Can vote if: dev mode enabled, or within distance
+  const canVote = isDevMode || (distanceValidation?.isValid ?? false);
+  const isCheckingLocation = geoLoading;
 
   if (!venue) return null;
 
   const starTapa = venue.tapas[0];
   const existingVote = starTapa ? getVoteForTapa(starTapa.id) : null;
+
+  const renderVoteButton = () => {
+    // Already voted
+    if (existingVote) {
+      return (
+        <Button 
+          variant="secondary"
+          className="w-full h-14 text-base font-semibold rounded-2xl gap-2"
+          size="lg"
+          disabled
+        >
+          <Star className="h-5 w-5 fill-secondary text-secondary" />
+          Tu voto: {existingVote.stars} estrellas
+        </Button>
+      );
+    }
+
+    // Checking location
+    if (isCheckingLocation) {
+      return (
+        <Button 
+          className="w-full h-14 text-base font-semibold rounded-2xl"
+          size="lg"
+          disabled
+        >
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+          Verificando ubicación...
+        </Button>
+      );
+    }
+
+    // Dev mode active
+    if (isDevMode) {
+      return (
+        <div className="space-y-2">
+          <Badge variant="outline" className="w-full justify-center py-1 text-xs bg-accent/20 border-accent text-accent-foreground">
+            🔧 Modo Desarrollador
+          </Badge>
+          <Button 
+            onClick={() => setVoteDialogOpen(true)}
+            className="w-full h-14 text-base font-semibold rounded-2xl shadow-lg"
+            size="lg"
+          >
+            VOTAR ESTA TAPA
+          </Button>
+        </div>
+      );
+    }
+
+    // Location error
+    if (geoError) {
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center justify-center gap-2 text-sm text-destructive">
+            <AlertTriangle className="h-4 w-4" />
+            {geoError}
+          </div>
+          <Button 
+            onClick={getPosition}
+            variant="outline"
+            className="w-full h-12 text-base font-semibold rounded-2xl"
+            size="lg"
+          >
+            <Navigation className="h-5 w-5 mr-2" />
+            Reintentar ubicación
+          </Button>
+        </div>
+      );
+    }
+
+    // Not close enough
+    if (distanceValidation && !distanceValidation.isValid) {
+      return (
+        <div className="space-y-3">
+          <div className="bg-muted rounded-xl p-3 text-center">
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-1">
+              <Navigation className="h-4 w-4" />
+              Estás a {formatDistance(distanceValidation.distance)}
+            </div>
+            <p className="text-sm font-medium text-foreground">
+              Debes estar en el local para votar
+            </p>
+          </div>
+          <Button 
+            variant="secondary"
+            className="w-full h-14 text-base font-semibold rounded-2xl"
+            size="lg"
+            disabled
+          >
+            <MapPin className="h-5 w-5 mr-2" />
+            VOTAR ESTA TAPA
+          </Button>
+        </div>
+      );
+    }
+
+    // Can vote!
+    if (canVote) {
+      return (
+        <div className="space-y-2">
+          {distanceValidation && (
+            <div className="flex items-center justify-center gap-2 text-sm text-accent">
+              <Navigation className="h-4 w-4" />
+              Estás a {formatDistance(distanceValidation.distance)} del local
+            </div>
+          )}
+          <Button 
+            onClick={() => setVoteDialogOpen(true)}
+            className="w-full h-14 text-base font-semibold rounded-2xl shadow-lg"
+            size="lg"
+          >
+            VOTAR ESTA TAPA
+          </Button>
+        </div>
+      );
+    }
+
+    // Waiting for location
+    return (
+      <Button 
+        onClick={getPosition}
+        variant="outline"
+        className="w-full h-14 text-base font-semibold rounded-2xl"
+        size="lg"
+      >
+        <Navigation className="h-5 w-5 mr-2" />
+        Obtener mi ubicación
+      </Button>
+    );
+  };
 
   return (
     <>
@@ -71,7 +224,7 @@ const VenueDetailSheet = ({ venue, open, onOpenChange }: VenueDetailSheetProps) 
             </div>
 
             {/* Content */}
-            <div className="p-5 pb-28 space-y-5">
+            <div className="p-5 pb-36 space-y-5">
               <SheetHeader className="text-left p-0">
                 <SheetTitle className="font-display text-xl">{venue.name}</SheetTitle>
                 {venue.address && (
@@ -119,25 +272,7 @@ const VenueDetailSheet = ({ venue, open, onOpenChange }: VenueDetailSheetProps) 
 
           {/* Sticky vote button */}
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8">
-            {existingVote ? (
-              <Button 
-                variant="secondary"
-                className="w-full h-14 text-base font-semibold rounded-2xl gap-2"
-                size="lg"
-                disabled
-              >
-                <Star className="h-5 w-5 fill-secondary text-secondary" />
-                Tu voto: {existingVote.stars} estrellas
-              </Button>
-            ) : (
-              <Button 
-                onClick={() => setVoteDialogOpen(true)}
-                className="w-full h-14 text-base font-semibold rounded-2xl shadow-lg"
-                size="lg"
-              >
-                VOTAR ESTA TAPA
-              </Button>
-            )}
+            {renderVoteButton()}
           </div>
         </SheetContent>
       </Sheet>
