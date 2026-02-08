@@ -243,7 +243,7 @@ const AdminPage = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-8 w-8 hover:bg-hover-dark hover:text-foreground transition-colors"
                             onClick={(e) => { e.stopPropagation(); openEditEvent(event); }}
                           >
                             <Edit className="h-4 w-4" />
@@ -253,7 +253,7 @@ const AdminPage = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 hover:bg-hover-dark hover:text-foreground transition-colors"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -280,7 +280,7 @@ const AdminPage = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-8 w-8 hover:bg-hover-dark hover:text-foreground transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedEventId(event.id);
@@ -366,7 +366,7 @@ const AdminPage = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 hover:bg-hover-dark hover:text-foreground transition-colors"
                                 onClick={(e) => { e.stopPropagation(); openQrDialog({ id: venue.id, name: venue.name }); }}
                               >
                                 <QrCode className="h-4 w-4" />
@@ -374,7 +374,7 @@ const AdminPage = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 hover:bg-hover-dark hover:text-foreground transition-colors"
                                 onClick={(e) => { e.stopPropagation(); openEditVenue(venue); }}
                               >
                                 <Edit className="h-4 w-4" />
@@ -384,7 +384,7 @@ const AdminPage = () => {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 hover:bg-hover-dark hover:text-foreground transition-colors"
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <Trash2 className="h-4 w-4 text-destructive" />
@@ -463,14 +463,14 @@ const AdminPage = () => {
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-7 w-7"
+                                        className="h-7 w-7 hover:bg-hover-dark hover:text-foreground transition-colors"
                                         onClick={() => openEditTapa(tapa, { id: venue.id, name: venue.name })}
                                       >
                                         <Edit className="h-3.5 w-3.5" />
                                       </Button>
                                       <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                                          <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-hover-dark hover:text-foreground transition-colors">
                                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                           </Button>
                                         </AlertDialogTrigger>
