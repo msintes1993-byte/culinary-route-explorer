@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import confetti from "canvas-confetti";
 
 export const useVotes = () => {
   const { user } = useAuth();
@@ -56,12 +57,33 @@ export const useVotes = () => {
 
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-votes"] });
-      toast({
-        title: "¡Voto registrado!",
-        description: "Gracias por tu valoración",
-      });
+    onSuccess: async () => {
+      // Invalidate queries to get updated vote count
+      await queryClient.invalidateQueries({ queryKey: ["user-votes"] });
+      
+      // Get the updated vote count
+      const updatedVotes = queryClient.getQueryData<any[]>(["user-votes", user?.id]) || [];
+      const totalVotes = updatedVotes.length;
+      const isRaffleEligible = totalVotes >= 3;
+
+      if (isRaffleEligible) {
+        // Trigger confetti for raffle entry
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+
+        toast({
+          title: "¡Voto registrado!",
+          description: "¡Ya estás participando en el sorteo! 🎉",
+        });
+      } else {
+        toast({
+          title: "¡Voto registrado!",
+          description: `Te faltan ${3 - totalVotes} voto${3 - totalVotes !== 1 ? 's' : ''} para entrar en el sorteo`,
+        });
+      }
     },
     onError: (error) => {
       toast({
