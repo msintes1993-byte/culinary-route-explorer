@@ -46,9 +46,9 @@ const RutaPage = () => {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
         <div className="px-4 py-4 space-y-3">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Ruta Gastronómica" className="h-10 w-10 object-contain" />
+            <img src={logo} alt="Tapea" className="h-10 w-10 object-contain" />
             <div>
-              <h1 className="font-display font-bold text-xl text-foreground">La Ruta</h1>
+              <h1 className="font-display font-bold text-xl text-foreground">Tapea</h1>
               <p className="text-xs text-muted-foreground">
                 {venues?.length || 0} locales participantes
               </p>
