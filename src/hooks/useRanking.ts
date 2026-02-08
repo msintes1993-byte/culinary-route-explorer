@@ -10,39 +10,49 @@ interface TapaWithRanking {
   vote_count: number;
 }
 
-export const useRanking = (limit: number = 5) => {
+export const useRanking = (limit: number = 5, eventId?: string) => {
   return useQuery({
-    queryKey: ["ranking", limit],
+    queryKey: ["ranking", limit, eventId],
     queryFn: async (): Promise<TapaWithRanking[]> => {
-      // Get all votes with tapa and venue info
-      const { data: votes, error: votesError } = await supabase
-        .from("votes")
-        .select("tapa_id, stars");
+      // Get venues (optionally filtered by event)
+      let venuesQuery = supabase.from("venues").select("id, name, event_id");
+      if (eventId) {
+        venuesQuery = venuesQuery.eq("event_id", eventId);
+      }
+      const { data: venues, error: venuesError } = await venuesQuery;
+      if (venuesError) throw venuesError;
 
-      if (votesError) throw votesError;
+      const venueIds = venues.map((v) => v.id);
+      if (venueIds.length === 0) return [];
 
-      // Get tapas
+      // Get tapas for these venues
       const { data: tapas, error: tapasError } = await supabase
         .from("tapas")
-        .select("id, name, image_url, venue_id");
+        .select("id, name, image_url, venue_id")
+        .in("venue_id", venueIds);
 
       if (tapasError) throw tapasError;
+      if (tapas.length === 0) return [];
 
-      // Get venues
-      const { data: venues, error: venuesError } = await supabase
-        .from("venues")
-        .select("id, name");
+      const tapaIds = tapas.map((t) => t.id);
 
-      if (venuesError) throw venuesError;
+      // Get votes for these tapas
+      const { data: votes, error: votesError } = await supabase
+        .from("votes")
+        .select("tapa_id, stars")
+        .in("tapa_id", tapaIds);
+
+      if (votesError) throw votesError;
 
       // Calculate averages
       const tapaStats = tapas.map((tapa) => {
         const tapaVotes = votes.filter((v) => v.tapa_id === tapa.id);
         const venue = venues.find((v) => v.id === tapa.venue_id);
-        
-        const avgStars = tapaVotes.length > 0
-          ? tapaVotes.reduce((sum, v) => sum + v.stars, 0) / tapaVotes.length
-          : 0;
+
+        const avgStars =
+          tapaVotes.length > 0
+            ? tapaVotes.reduce((sum, v) => sum + v.stars, 0) / tapaVotes.length
+            : 0;
 
         return {
           id: tapa.id,

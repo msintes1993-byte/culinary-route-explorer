@@ -17,11 +17,11 @@ interface VotedTapa {
   };
 }
 
-export const useUserVotedTapas = () => {
+export const useUserVotedTapas = (eventId?: string) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["user-voted-tapas", user?.id],
+    queryKey: ["user-voted-tapas", user?.id, eventId],
     queryFn: async (): Promise<VotedTapa[]> => {
       if (!user) return [];
 
@@ -33,7 +33,6 @@ export const useUserVotedTapas = () => {
         .order("created_at", { ascending: false });
 
       if (votesError) throw votesError;
-
       if (!votes.length) return [];
 
       // Get tapas for these votes
@@ -45,35 +44,50 @@ export const useUserVotedTapas = () => {
 
       if (tapasError) throw tapasError;
 
-      // Get venues
-      const venueIds = [...new Set(tapas.map((t) => t.venue_id))];
-      const { data: venues, error: venuesError } = await supabase
+      // Get venues (optionally filtered by event)
+      let venueIds = [...new Set(tapas.map((t) => t.venue_id))];
+      let venuesQuery = supabase
         .from("venues")
-        .select("id, name")
+        .select("id, name, event_id")
         .in("id", venueIds);
 
+      if (eventId) {
+        venuesQuery = venuesQuery.eq("event_id", eventId);
+      }
+
+      const { data: venues, error: venuesError } = await venuesQuery;
       if (venuesError) throw venuesError;
 
-      // Combine data
-      return votes.map((vote) => {
-        const tapa = tapas.find((t) => t.id === vote.tapa_id);
-        const venue = venues.find((v) => v.id === tapa?.venue_id);
+      // Filter venues to only those in this event
+      const filteredVenueIds = new Set(venues.map((v) => v.id));
 
-        return {
-          id: vote.id,
-          stars: vote.stars,
-          created_at: vote.created_at,
-          tapa: {
-            id: tapa?.id ?? "",
-            name: tapa?.name ?? "Tapa desconocida",
-            image_url: tapa?.image_url ?? null,
-          },
-          venue: {
-            id: venue?.id ?? "",
-            name: venue?.name ?? "Local desconocido",
-          },
-        };
-      });
+      // Combine data, filtering by venues in this event
+      return votes
+        .map((vote) => {
+          const tapa = tapas.find((t) => t.id === vote.tapa_id);
+          if (!tapa) return null;
+
+          // If filtering by event, exclude tapas not in matching venues
+          if (eventId && !filteredVenueIds.has(tapa.venue_id)) return null;
+
+          const venue = venues.find((v) => v.id === tapa.venue_id);
+
+          return {
+            id: vote.id,
+            stars: vote.stars,
+            created_at: vote.created_at,
+            tapa: {
+              id: tapa.id,
+              name: tapa.name,
+              image_url: tapa.image_url,
+            },
+            venue: {
+              id: venue?.id ?? "",
+              name: venue?.name ?? "Local desconocido",
+            },
+          };
+        })
+        .filter((v): v is VotedTapa => v !== null);
     },
     enabled: !!user,
   });
