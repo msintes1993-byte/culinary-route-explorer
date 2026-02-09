@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Loader2, Star, MapPin, ArrowLeft, LogIn } from "lucide-react";
+import { Loader2, Star, MapPin, ArrowLeft, LogIn, Navigation } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
 import { useVotes } from "@/hooks/useVotes";
+import { useGeoLocation } from "@/hooks/useGeoLocation";
+import { useDevMode } from "@/hooks/useDevMode";
+import { validateDistance, formatDistance } from "@/lib/geo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import StarRating from "@/components/StarRating";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import { useToast } from "@/hooks/use-toast";
@@ -19,10 +23,20 @@ const VotarPage = () => {
   const { user, loading: authLoading } = useAuth();
   const { submitVote } = useVotes();
   const { toast } = useToast();
+  const { isDevMode } = useDevMode();
+  const { 
+    latitude, 
+    longitude, 
+    loading: geoLoading, 
+    error: geoError, 
+    getPosition,
+    hasLocation 
+  } = useGeoLocation();
   
   const [selectedTapaId, setSelectedTapaId] = useState<string | null>(null);
   const [rating, setRating] = useState(0);
   const [pendingVote, setPendingVote] = useState<{ tapaId: string; stars: number } | null>(null);
+  const [locationValidation, setLocationValidation] = useState<{ isValid: boolean; distance: number } | null>(null);
 
   // Fetch venue with tapas
   const { data: venue, isLoading, error } = useQuery({
@@ -53,6 +67,19 @@ const VotarPage = () => {
     },
     enabled: !!venueId,
   });
+
+  // Request geolocation on mount
+  useEffect(() => {
+    getPosition();
+  }, []);
+
+  // Validate distance when we have location and venue
+  useEffect(() => {
+    if (hasLocation && venue && latitude !== null && longitude !== null) {
+      const validation = validateDistance(latitude, longitude, venue.lat, venue.lng, 100);
+      setLocationValidation(validation);
+    }
+  }, [hasLocation, venue, latitude, longitude]);
 
   // Auto-select first tapa
   useEffect(() => {
@@ -128,6 +155,28 @@ const VotarPage = () => {
       return;
     }
 
+    // Check geolocation validation (skip in dev mode)
+    if (!isDevMode) {
+      if (!hasLocation) {
+        toast({
+          variant: "destructive",
+          title: "Ubicación requerida",
+          description: "Necesitamos verificar que estás en el restaurante para votar",
+        });
+        getPosition();
+        return;
+      }
+
+      if (locationValidation && !locationValidation.isValid) {
+        toast({
+          variant: "destructive",
+          title: "Estás demasiado lejos",
+          description: `Debes estar en el restaurante para votar. Distancia actual: ${formatDistance(locationValidation.distance)}`,
+        });
+        return;
+      }
+    }
+
     if (!user) {
       // Store vote and trigger login
       setPendingVote({ tapaId: selectedTapaId, stars: rating });
@@ -137,6 +186,9 @@ const VotarPage = () => {
 
     handleSubmitVote(selectedTapaId, rating);
   };
+
+  // Check if voting is allowed
+  const canVote = isDevMode || (locationValidation?.isValid ?? false);
 
   // Check for pending vote from previous session
   useEffect(() => {
@@ -224,6 +276,45 @@ const VotarPage = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Location status */}
+        {!isDevMode && (
+          <div className="mb-4">
+            {geoLoading ? (
+              <Alert>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <AlertDescription>
+                  Verificando tu ubicación...
+                </AlertDescription>
+              </Alert>
+            ) : geoError ? (
+              <Alert variant="destructive">
+                <Navigation className="h-4 w-4" />
+                <AlertDescription className="flex items-center justify-between">
+                  <span>{geoError}</span>
+                  <Button variant="outline" size="sm" onClick={getPosition}>
+                    Reintentar
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            ) : locationValidation && !locationValidation.isValid ? (
+              <Alert variant="destructive">
+                <MapPin className="h-4 w-4" />
+                <AlertDescription>
+                  Estás a {formatDistance(locationValidation.distance)} del restaurante. 
+                  Debes estar a menos de 100m para votar.
+                </AlertDescription>
+              </Alert>
+            ) : locationValidation?.isValid ? (
+              <Alert className="border-primary/50 bg-primary/10">
+                <MapPin className="h-4 w-4 text-primary" />
+                <AlertDescription className="text-primary">
+                  ¡Ubicación verificada! Puedes votar.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+          </div>
+        )}
 
         {/* Tapa selection */}
         <h2 className="font-semibold mb-3">
